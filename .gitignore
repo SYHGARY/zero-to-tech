@@ -3,6 +3,7 @@ node_modules
 .next
 out
 backend/.venv
+backend/*.db
 __pycache__/
 *.py[cod]
 .env*
