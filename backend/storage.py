@@ -9,8 +9,8 @@ def get_conn():
 
 def init_db():
     conn = get_conn()
-    cursor = conn.cursor()
-    cursor.execute("""
+    cur = conn.cursor()
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         text TEXT,
@@ -20,6 +20,7 @@ def init_db():
         created_at TEXT
     )
     """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_history_created ON history(created_at)")
     conn.commit()
     conn.close()
 
