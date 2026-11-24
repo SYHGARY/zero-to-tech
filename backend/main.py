@@ -5,12 +5,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from storage import init_db, save_record, get_history
 from business import get_result
 
+import uuid
+from fastapi import Request, Response
+
+import uuid
+from fastapi import Request, Response
+
+def get_session_id(request: Request, response: Response) -> str:
+    sid = request.cookies.get("session_id")      # 先看有没有纸条
+    if not sid:                                  # 第一次来，没有则发一张
+        sid = uuid.uuid4().hex                   # 生成UUID
+        response.set_cookie(
+            "session_id", sid,
+            httponly=True, samesite="lax",
+            max_age=60 * 60 * 24 * 30,            # 记 30 天
+        )
+    return sid
+
 # 创建FastAPI对象，并设置通行的URL与方法
+# 同时允许携带凭证（Cookie)
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_methods=["GET", "POST"],
+    allow_credentials=True,
 )
 
 init_db()  # 初始化数据库
@@ -42,14 +61,17 @@ def get_profile():
 
 # 文字分析页面路由
 @app.post("/api/analyze")
-def analyze(req: AnalyzeRequest):
+def analyze(req: AnalyzeRequest, request : Request, response : Response):
+    sid = get_session_id(request, response)
     text = req.text
     result = get_result(text)
-    save_record(result)
+    save_record(sid, result)
     return result
 
 # 查看历史记录页面路由
 @app.get("/api/history")
-def history():
-    return get_history()
+def history(request : Request, response : Response, limit : int = 10):
+    sid = get_session_id(request, response)
+    return get_history(sid, limit)
+
 
